@@ -57,12 +57,22 @@ class _LogViewState extends State<LogView> {
           ),
           ElevatedButton(
             onPressed: () {
+              final title = _titleController.text.trim();
+              final desc = _contentController.text.trim();
+
+              if (title.isEmpty || desc.isEmpty) {
+                _showSnackBar(
+                  message :"Judul dan Deskripsi tidak boleh kosong!",
+                  color : Colors.red,
+                  icon : Icons.error,
+                );
+                return;
+              }
               // Jalankan fungsi tambah di Controller
               _controller.addLog(
                 _titleController.text, 
                 _contentController.text
               );
-              
               // Trigger UI Refresh
               setState(() {}); 
               
@@ -70,6 +80,11 @@ class _LogViewState extends State<LogView> {
               _titleController.clear();
               _contentController.clear();
               Navigator.pop(context);
+              _showSnackBar(
+                  message :"Catatan berhasil disimpan",
+                  color : Colors.green,
+                  icon : Icons.check_circle,
+              );
             },
             child: const Text("Simpan"),
           ),
@@ -96,10 +111,26 @@ class _LogViewState extends State<LogView> {
           TextButton(onPressed: () => Navigator.pop(context), child: const Text("Batal")),
           ElevatedButton(
             onPressed: () {
+              final title = _titleController.text.trim();
+              final desc = _contentController.text.trim();
+
+              if (title.isEmpty || desc.isEmpty) {
+                _showSnackBar(
+                  message :"Judul dan Deskripsi tidak boleh kosong!",
+                  color : Colors.red,
+                  icon : Icons.error,
+                );
+                return;
+              }
               _controller.updateLog(index, _titleController.text, _contentController.text);
               _titleController.clear();
               _contentController.clear();
               Navigator.pop(context);
+              _showSnackBar(
+                  message :"Catatan berhasil disimpan",
+                  color : Colors.green,
+                  icon : Icons.check_circle,
+              );
             },
             child: const Text("Update"),
           ),
@@ -108,6 +139,32 @@ class _LogViewState extends State<LogView> {
     );
   }
 
+  
+  // untuk memunculkan snackbar 
+  void _showSnackBar({
+    required String message,
+    required Color color,
+    required IconData icon,
+  }) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: color,
+        duration: const Duration(seconds: 2),
+        content: Row(
+          children: [
+            Icon(icon, color: Colors.white),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
 
   @override

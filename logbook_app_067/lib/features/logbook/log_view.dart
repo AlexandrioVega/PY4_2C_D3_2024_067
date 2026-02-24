@@ -73,9 +73,7 @@ class _LogViewState extends State<LogView> {
                 _titleController.text, 
                 _contentController.text
               );
-              // Trigger UI Refresh
-              setState(() {}); 
-              
+
               // Bersihkan input dan tutup dialog
               _titleController.clear();
               _contentController.clear();
@@ -219,7 +217,9 @@ class _LogViewState extends State<LogView> {
       body: ValueListenableBuilder<List<LogModel>>(
         valueListenable: _controller.logsNotifier,
         builder: (context, currentLogs, child) {
-          if (currentLogs.isEmpty) return const Center(child: Text("Belum ada catatan."));
+          if (currentLogs.isEmpty){ 
+            return const Center(child: Text("Belum ada catatan."));
+          }
           return ListView.builder(
             itemCount: currentLogs.length,
             itemBuilder: (context, index) {
@@ -237,9 +237,7 @@ class _LogViewState extends State<LogView> {
                       ),
                       IconButton(
                         icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () {
-                          setState(() => _controller.removeLog(index));
-                        },
+                        onPressed: () =>_controller.removeLog(index),
                       ),
                     ],
                   ),

@@ -7,8 +7,6 @@ class OnboardingView extends StatefulWidget {
   @override
   State<OnboardingView> createState() => _OnboardingViewState();
 }
-
-
 class _OnboardingViewState extends State<OnboardingView> {
   int step = 0;
 
@@ -52,35 +50,36 @@ class _OnboardingViewState extends State<OnboardingView> {
     final data = dataOnboarding[step];
     return Scaffold(
       body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Image.asset(
-              data["gambar"]!,
-              width: 200,
-              height: 200,
-            ),
-
-            const SizedBox(height: 40),
-
-            Text(
-              data["judul"]!,
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Image.asset(
+                data["gambar"]!,
+                width: 200,
+                height: 200,
               ),
-            ),
 
-            const SizedBox(height: 16),
-  
-            Text(
-              data["deskripsi"]!,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 16,
-                color: Colors.grey,
+              const SizedBox(height: 40),
+
+              Text(
+                data["judul"]!,
+                style: const TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
+
+              const SizedBox(height: 16),
+    
+              Text(
+                data["deskripsi"]!,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey,
+                ),
+              ),
 
             const SizedBox(height: 30),
             Row(
@@ -108,7 +107,8 @@ class _OnboardingViewState extends State<OnboardingView> {
                 "Mulai" :
                 "Lanjut"),
             ),
-          ],
+            ],
+          ),
         ),
       ),
     );

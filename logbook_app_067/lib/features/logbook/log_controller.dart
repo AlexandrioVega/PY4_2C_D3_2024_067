@@ -1,77 +1,188 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:mongo_dart/mongo_dart.dart';
 import 'package:logbook_app_067/features/logbook/models/log_model.dart';
+import 'package:logbook_app_067/helpers/log_helper.dart';
+import 'package:logbook_app_067/services/mongo_service.dart';
 
 class LogController {
-  final String username;
-  final ValueNotifier<List<LogModel>> logsNotifier = ValueNotifier([]);
-  ValueNotifier<List<LogModel>> filteredLogs = ValueNotifier([]);
-  String _lastQuery = '';
-  String get _storageKey => 'logs_$username';
-
-  LogController(this.username);
-  Future<void> init() async {
-    await loadFromDisk();
-    filteredLogs.value = logsNotifier.value;
+  final ValueNotifier<List<LogModel>> logsNotifier =
+      ValueNotifier<List<LogModel>>([]);
+  static const String _storageKey = 'user_logs_data';
+  List<LogModel> get logs => logsNotifier.value;
+  ValueNotifier<List<LogModel>> get filteredLogs => logsNotifier;
+  LogController([String? username]) {
   }
 
-  void searchLog(String query) {
-    _lastQuery = query;
-    if (query.isEmpty) {
-      filteredLogs.value = logsNotifier.value;
-    } else {
-      filteredLogs.value = logsNotifier.value
-          .where((log) => log.title.toLowerCase().contains(query.toLowerCase()))
-          .toList();
+  Future<void> addLog(String title, String desc, [String category = 'Pribadi']) async {
+    final newLog = LogModel(
+      id: ObjectId(),
+      title: title,
+      description: desc,
+      date: DateTime.now().toString(),
+      category: category,
+    );
+
+    try {
+      await MongoService().insertLog(newLog);
+      final currentLogs = List<LogModel>.from(logsNotifier.value);
+      currentLogs.add(newLog);
+      logsNotifier.value = currentLogs;
+
+      await LogHelper.writeLog(
+        "SUCCESS: Tambah data dengan ID lokal",
+        source: "log_controller.dart",
+      );
+    } catch (e) {
+      await LogHelper.writeLog("ERROR: Gagal sinkronisasi Add - $e", level: 1);
     }
   }
 
+  Future<void> updateLog(int index, String newTitle, String newDesc, [String category = 'Pribadi']) async {
+    final currentLogs = List<LogModel>.from(logsNotifier.value);
+    final oldLog = currentLogs[index];
 
-  void addLog(String title, String desc, String category) {
-    final newLog = LogModel(title: title, description: desc, date: DateTime.now().toString(), category: category);
-    logsNotifier.value = [...logsNotifier.value, newLog];
-    saveToDisk();
-    searchLog(_lastQuery);
+    final updatedLog = LogModel(
+      id: oldLog.id,
+      title: newTitle,
+      description: newDesc,
+      date: DateTime.now().toString(),
+      category: category,
+    );
+
+    try {
+      await MongoService().updateLog(updatedLog);
+      currentLogs[index] = updatedLog;
+      logsNotifier.value = currentLogs;
+
+      await LogHelper.writeLog(
+        "SUCCESS: Sinkronisasi Update '${oldLog.title}' Berhasil",
+        source: "log_controller.dart",
+        level: 2,
+      );
+    } catch (e) {
+      await LogHelper.writeLog(
+        "ERROR: Gagal sinkronisasi Update - $e",
+        source: "log_controller.dart",
+        level: 1,
+      );
+    }
+  }
+  Future<void> removeLog(int index) async {
+    final currentLogs = List<LogModel>.from(logsNotifier.value);
+    final targetLog = currentLogs[index];
+
+    try {
+      if (targetLog.id == null) {
+        throw Exception(
+          "ID Log tidak ditemukan, tidak bisa menghapus di Cloud.",
+        );
+      }
+      await MongoService().deleteLog(targetLog.id!);
+      currentLogs.removeAt(index);
+      logsNotifier.value = currentLogs;
+
+      await LogHelper.writeLog(
+        "SUCCESS: Sinkronisasi Hapus '${targetLog.title}' Berhasil",
+        source: "log_controller.dart",
+        level: 2,
+      );
+    } catch (e) {
+      await LogHelper.writeLog(
+        "ERROR: Gagal sinkronisasi Hapus - $e",
+        source: "log_controller.dart",
+        level: 1,
+      );
+    }
   }
 
-  void updateLog(int index, String title, String desc, String category) {
-    final currentLogs = List<LogModel>.from(logsNotifier.value);
-    currentLogs[index] = LogModel(title: title, description: desc, date: DateTime.now().toString(), category: category);
-    logsNotifier.value = currentLogs;
-    saveToDisk();
-    searchLog(_lastQuery);
-  }
+  Future<void> removeLogById(ObjectId id) async {
+    try {
+      await MongoService().deleteLog(id);
+      final currentLogs = List<LogModel>.from(logsNotifier.value);
+      currentLogs.removeWhere((log) => log.id == id);
+      logsNotifier.value = currentLogs;
 
-  void removeLog(int index) {
-    final currentLogs = List<LogModel>.from(logsNotifier.value);
-    currentLogs.removeAt(index);
-    logsNotifier.value = currentLogs;
-    saveToDisk();
-    searchLog(_lastQuery);
+      await LogHelper.writeLog(
+        "SUCCESS: Hapus ID $id Berhasil",
+        source: "log_controller.dart",
+        level: 2,
+      );
+    } catch (e) {
+      await LogHelper.writeLog(
+        "ERROR: Gagal hapus ID $id - $e",
+        source: "log_controller.dart",
+        level: 1,
+      );
+      rethrow;
+    }
+  }
+  Future<void> updateLogById(ObjectId id, String newTitle, String newDesc, [String category = 'Pribadi']) async {
+    try {
+      final currentLogs = List<LogModel>.from(logsNotifier.value);
+      final indexToUpdate = currentLogs.indexWhere((log) => log.id == id);
+      if (indexToUpdate == -1) {
+        throw Exception("Log dengan ID $id tidak ditemukan");
+      }
+
+      final oldLog = currentLogs[indexToUpdate];
+      final updatedLog = LogModel(
+        id: oldLog.id,
+        title: newTitle,
+        description: newDesc,
+        date: DateTime.now().toString(),
+        category: category,
+      );
+      await MongoService().updateLog(updatedLog);
+      currentLogs[indexToUpdate] = updatedLog;
+      logsNotifier.value = currentLogs;
+
+      await LogHelper.writeLog(
+        "SUCCESS: Update ID $id Berhasil",
+        source: "log_controller.dart",
+        level: 2,
+      );
+    } catch (e) {
+      await LogHelper.writeLog(
+        "ERROR: Gagal update ID - $e",
+        source: "log_controller.dart",
+        level: 1,
+      );
+      rethrow;
+    }
   }
 
   Future<void> saveToDisk() async {
     final prefs = await SharedPreferences.getInstance();
-    final String encodedData = jsonEncode(logsNotifier.value.map((e) => e.toMap()).toList());
+    // Mengubah List of Object -> List of Map -> String JSON
+    final String encodedData = jsonEncode(
+      logsNotifier.value.map((log) => log.toMap()).toList(),
+    );
     await prefs.setString(_storageKey, encodedData);
   }
 
   Future<void> loadFromDisk() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? data = prefs.getString(_storageKey) ?? '';
-    
-    if (data == null || data.isEmpty) {
-      logsNotifier.value = [];
-      return;
-    }
+    final cloudData = await MongoService().getLogs();
+    logsNotifier.value = cloudData;
+  }
 
+  Future<void> syncFromCloud() async {
     try {
-      final List decoded = jsonDecode(data);
-      logsNotifier.value =
-          decoded.map((e) => LogModel.fromMap(e)).toList();
+      final freshData = await MongoService().getLogs();
+      logsNotifier.value = freshData;
+      await LogHelper.writeLog(
+        "SYNC: logsNotifier updated dari Cloud (${freshData.length} items)",
+        source: "log_controller.dart",
+        level: 3,
+      );
     } catch (e) {
-      logsNotifier.value = [];
+      await LogHelper.writeLog(
+        "SYNC: Gagal sync dari Cloud - $e",
+        source: "log_controller.dart",
+        level: 1,
+      );
+      rethrow;
     }
   }
 
@@ -79,11 +190,12 @@ class LogController {
     switch (category) {
       case 'Pekerjaan':
         return Colors.blue.shade100;
+      case 'Pribadi':
+        return Colors.green.shade100;
       case 'Urgent':
         return Colors.red.shade100;
-      case 'Pribadi':
       default:
-        return Colors.green.shade100;
+        return Colors.grey.shade100;
     }
   }
 
@@ -91,11 +203,12 @@ class LogController {
     switch (category) {
       case 'Pekerjaan':
         return Icons.work;
-      case 'Urgent':
-        return Icons.priority_high;
       case 'Pribadi':
-      default:
         return Icons.person;
+      case 'Urgent':
+        return Icons.warning;
+      default:
+        return Icons.note;
     }
   }
 }

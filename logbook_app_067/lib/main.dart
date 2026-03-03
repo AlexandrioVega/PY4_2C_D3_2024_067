@@ -1,8 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:logbook_app_067/features/onboarding/onboarding_view.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 
-void main() {
+void main() async {
+  // Wajib untuk operasi asinkron sebelum runApp
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  try {
+    // Load ENV
+    await dotenv.load(fileName: ".env");
+  } catch (e) {
+    debugPrint('Warning: Failed to load .env - $e');
+  }
+
   runApp(const MyApp());
 }
 

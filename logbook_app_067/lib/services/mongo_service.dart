@@ -1,7 +1,9 @@
+import 'dart:io';
 import 'package:mongo_dart/mongo_dart.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:logbook_app_067/features/logbook/models/log_model.dart';
 import 'package:logbook_app_067/helpers/log_helper.dart';
+import 'package:logbook_app_067/helpers/app_exceptions.dart';
 
 class MongoService {
   static final MongoService _instance = MongoService._internal();
@@ -74,12 +76,49 @@ class MongoService {
     } catch (e) {
       _db = null;
       _collection = null;
-      await LogHelper.writeLog(
-        "DATABASE: Gagal Koneksi - $e",
-        source: _source,
-        level: 1,
-      );
-      rethrow;
+      
+      // Error detection & friendly message
+      if (e is SocketException || e.toString().contains('Connection refused')) {
+        await LogHelper.writeLog(
+          "OFFLINE: Koneksi internet gagal - $e",
+          source: _source,
+          level: 1,
+        );
+        throw OfflineException(
+          message: e.toString(),
+          userFriendlyMessage: '❌ Internet terputus atau server tidak dapat dijangkau.',
+        );
+      } else if (e.toString().contains('timeout')) {
+        await LogHelper.writeLog(
+          "TIMEOUT: Koneksi lambat - $e",
+          source: _source,
+          level: 1,
+        );
+        throw TimeoutException(
+          message: e.toString(),
+          userFriendlyMessage: '⏱️ Koneksi sangat lambat. Periksa sinyal atau pindah lokasi.',
+        );
+      } else if (e.toString().contains('authentication') || e.toString().contains('unauthorized')) {
+        await LogHelper.writeLog(
+          "AUTH ERROR: Database authentication failed - $e",
+          source: _source,
+          level: 1,
+        );
+        throw AuthException(
+          message: e.toString(),
+          userFriendlyMessage: '🔒 Autentikasi database gagal. Hubungi guru.',
+        );
+      } else {
+        await LogHelper.writeLog(
+          "DATABASE: Gagal Koneksi - $e",
+          source: _source,
+          level: 1,
+        );
+        throw ServerException(
+          message: e.toString(),
+          userFriendlyMessage: '⚠️ Server MongoDB error.',
+        );
+      }
     } finally {
       _isConnecting = false;
     }
@@ -98,13 +137,29 @@ class MongoService {
 
       final List<Map<String, dynamic>> data = await collection.find().toList();
       return data.map((json) => LogModel.fromMap(json)).toList();
+    } on OfflineException {
+      rethrow;
+    } on TimeoutException {
+      rethrow;
+    } on ServerException {
+      rethrow;
+    } on AuthException {
+      rethrow;
     } catch (e) {
       await LogHelper.writeLog(
         "ERROR: Fetch Failed - $e",
         source: _source,
         level: 1,
       );
-      return [];
+      
+      // Detect error type
+      if (e.toString().contains('connection')) {
+        throw OfflineException(message: e.toString());
+      } else if (e.toString().contains('timeout')) {
+        throw TimeoutException(message: e.toString());
+      }
+      
+      throw ServerException(message: e.toString());
     }
   }
 

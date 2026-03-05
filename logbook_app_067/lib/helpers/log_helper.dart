@@ -45,25 +45,56 @@ class LogHelper {
   /// Fungsi helper untuk menulis ke file log
   static Future<void> _writeToFile(String dateForFile, String logMessage) async {
     try {
-      // Dapatkan path untuk folder logs
-      final appDir = Directory('logs');
+      Directory? targetDir;
       
-      // Buat folder jika belum ada
-      if (!appDir.existsSync()) {
-        appDir.createSync(recursive: true);
+      // Strategy 1: Coba relative path 'logs' (untuk flutter test)
+      try {
+        final relativeDir = Directory('logs');
+        if (!relativeDir.existsSync()) {
+          relativeDir.createSync(recursive: true);
+        }
+        
+        final logFile = File('logs/$dateForFile.log');
+        await logFile.writeAsString('$logMessage\n', mode: FileMode.append);
+        return; // Success!
+      } catch (e) {
+        print('[LOG_WARNING] Relative path gagal: $e');
       }
-
-      // Buat file dengan nama dd-mm-yyyy.log
-      final logFile = File('logs/$dateForFile.log');
       
-      // Append message ke file
-      await logFile.writeAsString(
-        '$logMessage\n',
-        mode: FileMode.append,
-      );
+      // Strategy 2: Coba absolute path project (Windows)
+      try {
+        final absolutePath = 'c:\\PY4_2C_D3_2024_067\\logbook_app_067\\logs';
+        final absDir = Directory(absolutePath);
+        if (!absDir.existsSync()) {
+          absDir.createSync(recursive: true);
+        }
+        
+        final logFile = File('$absolutePath\\$dateForFile.log');
+        await logFile.writeAsString('$logMessage\n', mode: FileMode.append);
+        print('[LOG_INFO] Logs ditulis ke: $absolutePath');
+        return; // Success!
+      } catch (e) {
+        print('[LOG_WARNING] Absolute path gagal: $e');
+      }
+      
+      // Strategy 3: Coba temp directory
+      try {
+        final tempDir = Directory.systemTemp;
+        final logsDir = Directory('${tempDir.path}/logbook_logs');
+        if (!logsDir.existsSync()) {
+          logsDir.createSync(recursive: true);
+        }
+        
+        final logFile = File('${logsDir.path}/$dateForFile.log');
+        await logFile.writeAsString('$logMessage\n', mode: FileMode.append);
+        print('[LOG_INFO] Logs ditulis ke temp: ${logsDir.path}');
+        return; // Success!
+      } catch (e) {
+        print('[LOG_ERROR] Semua path gagal: $e');
+      }
+      
     } catch (e) {
-      // Silent fail untuk file writing
-      dev.log("Failed to write log file: $e", name: "SYSTEM", level: 1000);
+      print('[LOG_ERROR] File write error: $e');
     }
   }
 

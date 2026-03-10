@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:logbook_app_067/features/logbook/log_controller.dart';
 import 'package:logbook_app_067/features/logbook/models/log_model.dart';
-import 'package:logbook_app_067/helpers/app_exceptions.dart';
 import 'package:logbook_app_067/helpers/datetime_helper.dart';
 
-/// Widget untuk menampilkan satu item catatan dalam list dengan Dismissible
 class LogItemCard extends StatelessWidget {
   final LogModel log;
   final LogController controller;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final bool canEdit;    
+  final bool canDelete;  
 
   const LogItemCard({
     Key? key,
@@ -17,13 +17,17 @@ class LogItemCard extends StatelessWidget {
     required this.controller,
     required this.onEdit,
     required this.onDelete,
+    this.canEdit = true,
+    this.canDelete = true,
   }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Dismissible(
       key: Key(log.id.toString()),
-      direction: DismissDirection.endToStart,
+      direction: canDelete
+          ? DismissDirection.endToStart
+          : DismissDirection.none, 
       background: Container(
         decoration: BoxDecoration(
           color: Colors.red.shade600,
@@ -32,46 +36,68 @@ class LogItemCard extends StatelessWidget {
         alignment: Alignment.centerRight,
         padding: const EdgeInsets.only(right: 20),
         margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-        child: const Icon(
-          Icons.delete,
-          color: Colors.white,
-          size: 28,
-        ),
+        child: const Icon(Icons.delete, color: Colors.white, size: 28),
       ),
       confirmDismiss: (direction) async {
+        if (!canDelete) return false;
         return await showDialog<bool>(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: const Text("Hapus Catatan?"),
-              content: Text(
-                'Apakah Anda yakin ingin menghapus "${log.title}"?\n\nData ini akan dihapus dari Cloud secara permanen.',
+              context: context,
+              builder: (ctx) => AlertDialog(
+                title: const Text("Hapus Catatan?"),
+                content: Text(
+                  'Apakah Anda yakin ingin menghapus "${log.title}"?\n\nData ini akan dihapus dari Cloud secara permanen.',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx, false),
+                    child: const Text("Batal",
+                        style: TextStyle(color: Colors.grey)),
+                  ),
+                  TextButton(
+                    onPressed: () => Navigator.pop(ctx, true),
+                    child: const Text("Hapus",
+                        style: TextStyle(color: Colors.red)),
+                  ),
+                ],
               ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context, false),
-                  child: const Text("Batal", style: TextStyle(color: Colors.grey)),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.pop(context, true),
-                  child: const Text("Hapus", style: TextStyle(color: Colors.red)),
-                ),
-              ],
-            );
-          },
-        ) ?? false;
+            ) ??
+            false;
       },
-      onDismissed: (direction) {
-        onDelete();
-      },
+      onDismissed: (_) => onDelete(),
       child: Card(
         margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         child: ListTile(
-          leading: Icon(
-            controller.getCategoryIcon(log.category),
-            color: Colors.blue,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 6,
           ),
-          title: Text(log.title),
+          leading: Stack(
+            children: [
+              Icon(
+                controller.getCategoryIcon(log.category),
+                color: Colors.blue,
+                size: 28,
+              ),
+
+              Positioned(
+                right: 0,
+                bottom: 0,
+                child: Icon(
+                  log.id != null
+                      ? Icons.cloud_done
+                      : Icons.cloud_upload_outlined,
+                  size: 12,
+                  color: log.id != null ? Colors.green : Colors.orange,
+                ),
+              ),
+            ],
+          ),
+          title: Text(
+            log.title,
+            style: const TextStyle(fontWeight: FontWeight.bold),
+          ),
           subtitle: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -79,60 +105,150 @@ class LogItemCard extends StatelessWidget {
                 log.description,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 13),
               ),
               const SizedBox(height: 4),
-              Row(
-                children: [
-                  Chip(
-                    label: Text(
-                      log.category,
-                      style: const TextStyle(fontSize: 11),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: controller.getCategoryColor(log.category),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        log.category,
+                        style: const TextStyle(fontSize: 11),
+                      ),
                     ),
-                    backgroundColor: controller.getCategoryColor(log.category),
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
-                  ),
-                  const SizedBox(width: 8),
-                  LogTimestamp(dateString: log.date),
-                ],
+                    const SizedBox(width: 8),
+                    LogTimestamp(dateString: log.date),
+                    const SizedBox(width: 8),
+                    // [Task 5] Indikator privacy status
+                    if (log.isPublic)
+                      Tooltip(
+                        message: "Catatan ini dibagikan dengan tim",
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.shade100,
+                            border: Border.all(color: Colors.blue.shade300),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.public, size: 10, color: Colors.blue.shade700),
+                              const SizedBox(width: 3),
+                              Text(
+                                "Public",
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  color: Colors.blue.shade700,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
+                    else
+                      Tooltip(
+                        message: "Catatan ini hanya untuk Anda",
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 6,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.grey.shade200,
+                            border: Border.all(color: Colors.grey.shade400),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.lock, size: 10, color: Colors.grey.shade700),
+                              const SizedBox(width: 3),
+                              Text(
+                                "Private",
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  color: Colors.grey.shade700,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    const SizedBox(width: 8),
+                    // Indikator kepemilikan
+                    if (log.authorId.isNotEmpty)
+                      Text(
+                        "· ${log.authorId}",
+                        style: const TextStyle(
+                          fontSize: 10,
+                          color: Colors.grey,
+                        ),
+                      ),
+                  ],
+                ),
               ),
             ],
           ),
           trailing: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              IconButton(
-                icon: const Icon(Icons.edit, color: Colors.blue),
-                onPressed: onEdit,
-              ),
-              IconButton(
-                icon: const Icon(Icons.delete, color: Colors.red),
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return AlertDialog(
+              if (canEdit)
+                IconButton(
+                  icon: const Icon(Icons.edit, color: Colors.blue),
+                  onPressed: onEdit,
+                  tooltip: "Edit Catatan",
+                )
+              else
+                const SizedBox(width: 8),
+
+              if (canDelete)
+                IconButton(
+                  icon: const Icon(Icons.delete, color: Colors.red),
+                  tooltip: "Hapus Catatan",
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
                         title: const Text("Hapus Catatan?"),
                         content: Text(
-                          'Apakah Anda yakin ingin menghapus "${log.title}"?\n\nData ini akan dihapus dari Cloud secara permanen.',
+                          'Apakah Anda yakin ingin menghapus "${log.title}"?',
                         ),
                         actions: [
                           TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text("Batal", style: TextStyle(color: Colors.grey)),
+                            onPressed: () => Navigator.pop(ctx),
+                            child: const Text("Batal"),
                           ),
                           TextButton(
                             onPressed: () {
-                              Navigator.pop(context);
+                              Navigator.pop(ctx);
                               onDelete();
                             },
-                            child: const Text("Hapus", style: TextStyle(color: Colors.red)),
+                            child: const Text(
+                              "Hapus",
+                              style: TextStyle(color: Colors.red),
+                            ),
                           ),
                         ],
-                      );
-                    },
-                  );
-                },
-              ),
+                      ),
+                    );
+                  },
+                ),
             ],
           ),
         ),
@@ -141,14 +257,11 @@ class LogItemCard extends StatelessWidget {
   }
 }
 
-/// Widget untuk menampilkan state kosong (tidak ada catatan)
 class LogEmptyState extends StatelessWidget {
   final VoidCallback onCreateFirst;
 
-  const LogEmptyState({
-    Key? key,
-    required this.onCreateFirst,
-  }) : super(key: key);
+  const LogEmptyState({Key? key, required this.onCreateFirst})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -165,14 +278,15 @@ class LogEmptyState extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             const Text(
-              "Belum ada catatan di Cloud.",
+              "Belum ada catatan di Cloud.\nMulai dokumentasikan aktivitasmu!",
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 14, color: Colors.grey),
             ),
             const SizedBox(height: 24),
-            ElevatedButton(
+            ElevatedButton.icon(
               onPressed: onCreateFirst,
-              child: const Text("Buat Catatan Pertama"),
+              icon: const Icon(Icons.add),
+              label: const Text("Buat Catatan Pertama"),
             ),
           ],
         ),
@@ -181,14 +295,12 @@ class LogEmptyState extends StatelessWidget {
   }
 }
 
-/// Widget untuk menampilkan state search kosong
+
 class LogFilterEmptyState extends StatelessWidget {
   final String searchQuery;
 
-  const LogFilterEmptyState({
-    Key? key,
-    required this.searchQuery,
-  }) : super(key: key);
+  const LogFilterEmptyState({Key? key, required this.searchQuery})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -214,7 +326,6 @@ class LogFilterEmptyState extends StatelessWidget {
   }
 }
 
-/// Widget untuk menampilkan state loading
 class LogLoadingState extends StatelessWidget {
   const LogLoadingState({Key? key}) : super(key: key);
 
@@ -232,25 +343,21 @@ class LogLoadingState extends StatelessWidget {
     );
   }
 }
-/// Widget untuk menampilkan timestamp dengan format relatif atau absolut
-/// Contoh: "2 menit yang lalu" atau "25 Jan 2026"
+
+
 class LogTimestamp extends StatelessWidget {
   final String dateString;
   final TextStyle? style;
 
-  const LogTimestamp({
-    Key? key,
-    required this.dateString,
-    this.style,
-  }) : super(key: key);
+  const LogTimestamp({Key? key, required this.dateString, this.style})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final formattedTime = DateTimeHelper.formatRelativeTime(dateString);
-    
     return Text(
-      formattedTime,
-      style: style ?? const TextStyle(fontSize: 12, color: Colors.grey),
+      DateTimeHelper.formatRelativeTime(dateString),
+      style: style ??
+          const TextStyle(fontSize: 12, color: Colors.grey),
     );
   }
 }

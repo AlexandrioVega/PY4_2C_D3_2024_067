@@ -8,7 +8,6 @@ import 'package:logbook_app_067/helpers/app_exceptions.dart';
 class MongoService {
   static final MongoService _instance = MongoService._internal();
 
-  // Menggunakan nullable agar kita bisa mengecek status inisialisasi
   Db? _db;
   DbCollection? _collection;
   bool _isConnecting = false;
@@ -18,7 +17,7 @@ class MongoService {
   factory MongoService() => _instance;
   MongoService._internal();
 
-  /// Fungsi Internal untuk memastikan koleksi siap digunakan (Anti-LateInitializationError)
+
   Future<DbCollection> _getSafeCollection() async {
     if (_db == null || !_db!.isConnected || _collection == null) {
       await LogHelper.writeLog(
@@ -31,15 +30,14 @@ class MongoService {
     return _collection!;
   }
 
-  /// Inisialisasi Koneksi ke MongoDB Atlas (LAZY LOADING - Hanya saat dibutuhkan)
+
   Future<void> connect() async {
-    // Prevent multiple simultaneous connection attempts
     if (_isConnecting) {
       await Future.delayed(const Duration(milliseconds: 500));
       if (_db != null && _db!.isConnected) return;
     }
 
-    if (_db != null && _db!.isConnected) return; // Sudah terkoneksi
+    if (_db != null && _db!.isConnected) return;
 
     _isConnecting = true;
     try {
@@ -56,7 +54,6 @@ class MongoService {
 
       _db = await Db.create(dbUri);
 
-      // Timeout 15 detik agar lebih toleran terhadap jaringan seluler
       await _db!.open().timeout(
         const Duration(seconds: 15),
         onTimeout: () {
@@ -76,8 +73,7 @@ class MongoService {
     } catch (e) {
       _db = null;
       _collection = null;
-      
-      // Error detection & friendly message
+
       if (e is SocketException || e.toString().contains('Connection refused')) {
         await LogHelper.writeLog(
           "OFFLINE: Koneksi internet gagal - $e",
@@ -98,7 +94,8 @@ class MongoService {
           message: e.toString(),
           userFriendlyMessage: '⏱️ Koneksi sangat lambat. Periksa sinyal atau pindah lokasi.',
         );
-      } else if (e.toString().contains('authentication') || e.toString().contains('unauthorized')) {
+      } else if (e.toString().contains('authentication') ||
+          e.toString().contains('unauthorized')) {
         await LogHelper.writeLog(
           "AUTH ERROR: Database authentication failed - $e",
           source: _source,
@@ -124,18 +121,22 @@ class MongoService {
     }
   }
 
-  /// READ: Mengambil data dari Cloud
-  Future<List<LogModel>> getLogs() async {
+
+  Future<List<LogModel>> getLogs(String teamId) async {
     try {
-      final collection = await _getSafeCollection(); // Gunakan jalur aman
+      final collection = await _getSafeCollection();
 
       await LogHelper.writeLog(
-        "INFO: Fetching data from Cloud...",
+        "INFO: Fetching data for Team: $teamId",
         source: _source,
         level: 3,
       );
 
-      final List<Map<String, dynamic>> data = await collection.find().toList();
+      // Filter berdasarkan teamId — isolasi data antar kelompok
+      final List<Map<String, dynamic>> data = await collection
+          .find(where.eq('teamId', teamId))
+          .toList();
+
       return data.map((json) => LogModel.fromMap(json)).toList();
     } on OfflineException {
       rethrow;
@@ -151,14 +152,13 @@ class MongoService {
         source: _source,
         level: 1,
       );
-      
-      // Detect error type
+
       if (e.toString().contains('connection')) {
         throw OfflineException(message: e.toString());
       } else if (e.toString().contains('timeout')) {
         throw TimeoutException(message: e.toString());
       }
-      
+
       throw ServerException(message: e.toString());
     }
   }
@@ -184,14 +184,49 @@ class MongoService {
     }
   }
 
-  /// UPDATE: Memperbarui data berdasarkan ID
+  /// UPSERT: Insert jika baru, Update jika sudah ada (Safer untuk offline-first)
+  Future<void> upsertLog(LogModel log) async {
+    try {
+      final collection = await _getSafeCollection();
+      if (log.id == null) {
+        throw Exception("ID Log tidak ditemukan untuk upsert");
+      }
+
+      final objectId = ObjectId.fromHexString(log.id!);
+      final result = await collection.replaceOne(
+        where.id(objectId),
+        log.toMap(),
+        upsert: true,
+      );
+
+      await LogHelper.writeLog(
+        "UPSERT: Data '${log.title}' berhasil di-upsert (Matched: ${result.nMatched}, Modified: ${result.nModified})",
+        source: _source,
+        level: 2,
+      );
+    } catch (e) {
+      await LogHelper.writeLog(
+        "ERROR: Upsert Failed - $e",
+        source: _source,
+        level: 1,
+      );
+      rethrow;
+    }
+  }
+
+  
   Future<void> updateLog(LogModel log) async {
     try {
       final collection = await _getSafeCollection();
-      if (log.id == null)
+      if (log.id == null) {
         throw Exception("ID Log tidak ditemukan untuk update");
+      }
 
-      await collection.replaceOne(where.id(log.id!), log.toMap());
+      final objectId = ObjectId.fromHexString(log.id!);
+      await collection.replaceOne(
+        where.id(objectId),
+        log.toMap(),
+      );
 
       await LogHelper.writeLog(
         "DATABASE: Update '${log.title}' Berhasil",
@@ -208,7 +243,7 @@ class MongoService {
     }
   }
 
-  /// DELETE: Menghapus dokumen
+  /// DELETE: Menghapus dokumen berdasarkan ObjectId
   Future<void> deleteLog(ObjectId id) async {
     try {
       final collection = await _getSafeCollection();

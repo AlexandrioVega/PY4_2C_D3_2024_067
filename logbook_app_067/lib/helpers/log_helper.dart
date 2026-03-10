@@ -45,8 +45,6 @@ class LogHelper {
   /// Fungsi helper untuk menulis ke file log
   static Future<void> _writeToFile(String dateForFile, String logMessage) async {
     try {
-      Directory? targetDir;
-      
       // Strategy 1: Coba relative path 'logs' (untuk flutter test)
       try {
         final relativeDir = Directory('logs');

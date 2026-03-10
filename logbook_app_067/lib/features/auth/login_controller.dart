@@ -2,63 +2,69 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 
 class LoginController {
-  // Database sederhana (Hardcoded)
   bool isLocked = false;
   int _attempts = 1;
-  String logInformasi = "Login Gagal! Gunakan admin/123 atau alex/456";
+  final List<Map<String, String>> _penggunaList = [
+    {
+      'uid': 'user_001',
+      'username': 'admin',
+      'password': _hashPassword('123'),
+      'role': 'Ketua',
+      'teamId': 'MEKTRA_KLP_067',
+    },
+    {
+      'uid': 'user_002',
+      'username': 'alex',
+      'password': _hashPassword('456'),
+      'role': 'Anggota',
+      'teamId': 'MEKTRA_KLP_067',
+    },
+    {
+      'uid': 'user_003',
+      'username': 'rehan',
+      'password': _hashPassword('111'),
+      'role': 'Asisten',
+      'teamId': 'MEKTRA_KLP_067',
+    },
+  ];
 
-
-  // Map untuk menyimpan username dan password yang sudah di-hash
-  final Map<String, String> _pengguna = {
-    "admin" : hashPassword("123"),
-    "alex" : hashPassword("456")
-  };
-
-  // Fungsi untuk hashing password
-  static String hashPassword(String password){
+  static String _hashPassword(String password) {
     return sha256.convert(utf8.encode(password)).toString();
   }
 
-  // fungsi untuk memberikan jeda waktu 10 detik setelah 3 kali percobaan login gagal
   void _lockLogin() {
     isLocked = true;
-
     Future.delayed(const Duration(seconds: 10), () {
       _attempts = 1;
       isLocked = false;
     });
   }
+  Map<String, String>? login(String username, String password) {
+    if (isLocked) return null;
 
-  // fungsi untuk validasi pengguna, apakah pengguna terdaftar atau tidak
-  bool validasiPengguna(String username, String password) {
-    return _pengguna.containsKey(username) && _pengguna[username] == password;
-  }
+    final hashedPassword = _hashPassword(password);
 
-  // fungsi untuk melakukan login, mengembalikan true jika login berhasil, false jika gagal
-  bool login(String username, String password) {
-    // Hashing password yang dimasukkan pengguna
-    String hassingPassword = hashPassword(password);
+    final user = _penggunaList.firstWhere(
+      (u) => u['username'] == username && u['password'] == hashedPassword,
+      orElse: () => {},
+    );
+
+    if (user.isNotEmpty) {
+      _attempts = 0;
     
-    // Cek apakah login sedang terkunci
-    if (isLocked) {
-      return false;
+      return {
+        'uid': user['uid']!,
+        'username': user['username']!,
+        'role': user['role']!,
+        'teamId': user['teamId']!,
+      };
     }
 
-    // Validasi pengguna dengan password yang sudah di-hash
-    if (validasiPengguna(username, hassingPassword)) {
-      _attempts =0; 
-      return true;
-    }
-
-    // Jika login gagal, tambahkan jumlah percobaan
     _attempts += 1;
-
-    // Jika attemps melebihi batas, kunci login
     if (_attempts > 3) {
       _lockLogin();
     }
-    
-    return false;
-  }
 
+    return null;
+  }
 }

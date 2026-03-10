@@ -1,8 +1,5 @@
-// login_view.dart
 import 'package:flutter/material.dart';
-// Import Controller milik sendiri (masih satu folder)
 import 'package:logbook_app_067/features/auth/login_controller.dart';
-// Import View dari fitur lain (Logbook) untuk navigasi
 import 'package:logbook_app_067/features/logbook/log_view.dart';
 
 class LoginView extends StatefulWidget {
@@ -10,12 +7,12 @@ class LoginView extends StatefulWidget {
   @override
   State<LoginView> createState() => _LoginViewState();
 }
-@override
 
 class _LoginViewState extends State<LoginView> {
   final LoginController _controller = LoginController();
   final TextEditingController _userController = TextEditingController();
   final TextEditingController _passController = TextEditingController();
+  bool _isObscure = true;
 
   @override
   void dispose() {
@@ -24,12 +21,9 @@ class _LoginViewState extends State<LoginView> {
     super.dispose();
   }
 
-  
-  bool _isObscure = true;
-
   void _handleLogin() {
-    String user = _userController.text;
-    String pass = _passController.text;
+    final user = _userController.text.trim();
+    final pass = _passController.text;
 
     if (user.isEmpty || pass.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -42,24 +36,24 @@ class _LoginViewState extends State<LoginView> {
       return;
     }
 
-    bool isSuccess = _controller.login(user, pass);
+    final currentUser = _controller.login(user, pass);
 
-    if (isSuccess) {
+    if (currentUser != null) {
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(
-          builder: (_) => LogView(username: user),
+          builder: (_) => LogView(currentUser: currentUser),
         ),
         (route) => false,
       );
     } else {
-      String msg = _controller.isLocked
-          ? "Terlalu banyak percobaan. Coba lagi nanti."
-          : "Login Gagal! Gunakan admin/123 atau alex/456";
+      final msg = _controller.isLocked
+          ? "Terlalu banyak percobaan. Tunggu 10 detik."
+          : "Login Gagal! Gunakan admin/123 (Ketua) atau alex/456 (Anggota)";
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(msg),
           backgroundColor: Colors.red.shade400,
-          duration: const Duration(seconds: 2),
+          duration: const Duration(seconds: 3),
         ),
       );
     }
@@ -77,18 +71,13 @@ class _LoginViewState extends State<LoginView> {
               controller: _userController,
               decoration: const InputDecoration(
                 labelText: "Username",
-                border: OutlineInputBorder()
+                border: OutlineInputBorder(),
               ),
-  
             ),
-
-
-            
             const SizedBox(height: 12),
-
-          TextField(
+            TextField(
               controller: _passController,
-              obscureText: _isObscure, 
+              obscureText: _isObscure,
               decoration: InputDecoration(
                 labelText: "Password",
                 border: const OutlineInputBorder(),
@@ -97,24 +86,23 @@ class _LoginViewState extends State<LoginView> {
                     _isObscure ? Icons.visibility : Icons.visibility_off,
                   ),
                   onPressed: () {
-                    setState(() {
-                      _isObscure = !_isObscure; // toggle boolean
-                    });
+                    setState(() => _isObscure = !_isObscure);
                   },
                 ),
               ),
             ),
-            
             const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _handleLogin,
-              child: const Text("Masuk"),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _handleLogin,
+                child: const Text("Masuk"),
+              ),
             ),
+            
           ],
         ),
       ),
     );
   }
 }
-
-

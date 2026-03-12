@@ -25,7 +25,7 @@ class LogEditorPage extends StatefulWidget {
 class _LogEditorPageState extends State<LogEditorPage> {
   late TextEditingController _titleController;
   late TextEditingController _descController;
-  String _selectedCategory = 'Pribadi';
+  String _selectedCategory = 'Software';
   bool _isPublic = false; 
   bool _isSaving = false;
 
@@ -47,6 +47,19 @@ class _LogEditorPageState extends State<LogEditorPage> {
     _descController.addListener(() {
       setState(() {});
     });
+  }
+
+  Color _getCategoryColor(String category) {
+    switch (category) {
+      case 'Mechanical':
+        return Colors.green;
+      case 'Electronic':
+        return Colors.blue;
+      case 'Software':
+        return Colors.purple;
+      default:
+        return Colors.grey;
+    }
   }
 
   @override
@@ -185,12 +198,26 @@ class _LogEditorPageState extends State<LogEditorPage> {
                         horizontal: 12,
                         vertical: 8,
                       ),
+                      prefixIcon: Icon(Icons.category),
                     ),
-                    items: ['Pribadi', 'Pekerjaan', 'Urgent']
+                    items: ['Mechanical', 'Electronic', 'Software']
                         .map(
                           (cat) => DropdownMenuItem(
                             value: cat,
-                            child: Text(cat),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 12,
+                                  height: 12,
+                                  decoration: BoxDecoration(
+                                    color: _getCategoryColor(cat),
+                                    shape: BoxShape.circle,
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Text(cat),
+                              ],
+                            ),
                           ),
                         )
                         .toList(),

@@ -10,20 +10,25 @@ class LogController {
   final ValueNotifier<List<LogModel>> logsNotifier =
       ValueNotifier<List<LogModel>>([]);
 
-  // Hive box untuk penyimpanan lokal (Offline-First)
+  
+  final ValueNotifier<String> searchQueryNotifier =
+      ValueNotifier<String>('');
+  final ValueNotifier<List<LogModel>> filteredLogsNotifier =
+      ValueNotifier<List<LogModel>>([]);
+
   late final Box<LogModel> _myBox;
 
-  // Identitas pengguna yang sedang login
   final String userRole;
   final String userId;
 
   List<LogModel> get logs => logsNotifier.value;
+  String get searchQuery => searchQueryNotifier.value;
+  List<LogModel> get filteredLogs => filteredLogsNotifier.value;
 
   LogController({
     required this.userRole,
     required this.userId,
   }) {
-    // Ambil box yang sudah dibuka di main.dart
     _myBox = Hive.box<LogModel>('offline_logs');
   }
 
@@ -66,7 +71,7 @@ class LogController {
     String desc,
     String authorId,
     String teamId, {
-    String category = 'Pribadi',
+    String category = 'Software',
     bool isPublic = false, 
   }) async {
     final newLog = LogModel(
@@ -155,7 +160,6 @@ class LogController {
       isPublic: isPublic ?? oldLog.isPublic, 
     );
 
-    // Update Hive
     final hiveKey = _myBox.keyAt(_myBox.values.toList().indexWhere((l) => l.id == id));
     await _myBox.put(hiveKey, updatedLog);
     currentLogs[index] = updatedLog;
@@ -200,7 +204,6 @@ class LogController {
       return;
     }
 
-    // Hapus dari Hive
     final hiveIndex = _myBox.values.toList().indexWhere((l) => l.id == id);
     if (hiveIndex != -1) {
       await _myBox.deleteAt(hiveIndex);
@@ -208,7 +211,6 @@ class LogController {
     currentLogs.removeAt(index);
     logsNotifier.value = currentLogs;
 
-    // Hapus dari Cloud
     try {
       if (targetLog.id != null) {
         await MongoService().deleteLog(ObjectId.fromHexString(targetLog.id!));
@@ -304,32 +306,57 @@ class LogController {
 
   Color getCategoryColor(String category) {
     switch (category) {
-      case 'Pekerjaan':
-        return Colors.blue.shade100;
-      case 'Pribadi':
+      case 'Mechanical':
         return Colors.green.shade100;
-      case 'Urgent':
-        return Colors.red.shade100;
+      case 'Electronic':
+        return Colors.blue.shade100;
+      case 'Software':
+        return Colors.purple.shade100;
       default:
         return Colors.grey.shade100;
     }
   }
 
-  // Helper: Ikon kategori
   IconData getCategoryIcon(String category) {
     switch (category) {
-      case 'Pekerjaan':
-        return Icons.work;
-      case 'Pribadi':
-        return Icons.person;
-      case 'Urgent':
-        return Icons.warning;
+      case 'Mechanical':
+        return Icons.build;
+      case 'Electronic':
+        return Icons.electrical_services;
+      case 'Software':
+        return Icons.computer;
       default:
         return Icons.note;
     }
   }
 
+  void updateSearchQuery(String query) {
+    searchQueryNotifier.value = query;
+    performSearch();
+  }
+
+  void clearSearch() {
+    searchQueryNotifier.value = '';
+    performSearch();
+  }
+
+  void performSearch() {
+    final query = searchQueryNotifier.value.toLowerCase().trim();
+    
+    if (query.isEmpty) {
+      filteredLogsNotifier.value = logsNotifier.value;
+    } else {
+      filteredLogsNotifier.value = logsNotifier.value
+          .where((log) =>
+              log.title.toLowerCase().contains(query) ||
+              log.description.toLowerCase().contains(query))
+          .toList();
+    }
+  }
+
   void dispose() {
     logsNotifier.dispose();
+    searchQueryNotifier.dispose();
+    filteredLogsNotifier.dispose();
   }
 }

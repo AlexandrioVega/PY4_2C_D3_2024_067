@@ -59,7 +59,9 @@ class _LogViewState extends State<LogView> {
       }
     });
 
-    _searchController.addListener(() => setState(() {}));
+    _controller.logsNotifier.addListener(() {
+      _controller.performSearch();
+    });
   }
 
   @override
@@ -67,15 +69,6 @@ class _LogViewState extends State<LogView> {
     _searchController.dispose();
     _controller.dispose();
     super.dispose();
-  }
-
-  
-  List<LogModel> _getFilteredLogs(List<LogModel> allLogs) {
-    final query = _searchController.text.toLowerCase().trim();
-    if (query.isEmpty) return allLogs;
-    return allLogs
-        .where((log) => log.title.toLowerCase().contains(query))
-        .toList();
   }
 
   
@@ -220,15 +213,18 @@ class _LogViewState extends State<LogView> {
             padding: const EdgeInsets.all(12),
             child: TextField(
               controller: _searchController,
+              onChanged: (query) {
+                _controller.updateSearchQuery(query);
+              },
               decoration: InputDecoration(
-                hintText: "Cari berdasarkan judul...",
+                hintText: "Cari berdasarkan judul atau isi...",
                 prefixIcon: const Icon(Icons.search),
                 suffixIcon: _searchController.text.isNotEmpty
                     ? IconButton(
                         icon: const Icon(Icons.clear),
                         onPressed: () {
                           _searchController.clear();
-                          setState(() {});
+                          _controller.clearSearch();
                         },
                       )
                     : null,
@@ -245,27 +241,31 @@ class _LogViewState extends State<LogView> {
 
           Expanded(
             child: ValueListenableBuilder<List<LogModel>>(
-              valueListenable: _controller.logsNotifier,
-              builder: (context, allLogs, _) {
-                final visibleLogs = _getVisibleLogs(allLogs);
-                final filteredLogs = _getFilteredLogs(visibleLogs);
+              
+              valueListenable: _controller.filteredLogsNotifier,
+              builder: (context, filteredLogs, _) {
+                final visibleLogs = _getVisibleLogs(filteredLogs);
 
-                if (allLogs.isEmpty) {
+                if (filteredLogs.isEmpty && _controller.searchQuery.isEmpty) {
                   return LogEmptyState(onCreateFirst: () => _goToEditor());
                 }
 
-                if (filteredLogs.isEmpty) {
+                if (visibleLogs.isEmpty) {
                   return LogFilterEmptyState(
                     searchQuery: _searchController.text,
+                    onClearSearch: () {
+                      _searchController.clear();
+                      _controller.clearSearch();
+                    },
                   );
                 }
 
                 return RefreshIndicator(
                   onRefresh: () => _controller.loadLogs(_currentTeamId),
                   child: ListView.builder(
-                    itemCount: filteredLogs.length,
+                    itemCount: visibleLogs.length,
                     itemBuilder: (context, index) {
-                      final log = filteredLogs[index];
+                      final log = visibleLogs[index];
                       final bool isOwner = log.authorId == _currentUid;
                       final bool canEdit = AccessControlService.canPerform(
                         _currentRole,

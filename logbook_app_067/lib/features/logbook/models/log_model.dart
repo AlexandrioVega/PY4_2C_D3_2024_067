@@ -47,7 +47,7 @@ class LogModel {
       title: map['title'] ?? '',
       date: map['date'] ?? '',
       description: map['description'] ?? '',
-      category: map['category'] ?? 'Pribadi',
+      category: map['category'] ?? 'Software',
       authorId: map['authorId'] ?? 'unknown_user', 
       teamId: map['teamId'] ?? 'no_team',
       isPublic: map['isPublic'] ?? false, 

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <!-- Search magnifying glass body -->
+  <circle cx="75" cy="75" r="40" fill="currentColor" opacity="0.2" stroke="currentColor" stroke-width="2"/>
+  
+  <!-- Search magnifying glass handle -->
+  <line x1="105" y1="105" x2="140" y2="140" stroke="currentColor" stroke-width="2" opacity="0.3"/>
+  
+  <!-- X mark (indicating no results) -->
+  <g opacity="0.4">
+    <line x1="120" y1="120" x2="160" y2="160" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+    <line x1="160" y1="120" x2="120" y2="160" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+  </g>
+  
+  <!-- "NO DATA" text indicator -->
+  <text x="100" y="180" font-size="14" font-weight="bold" text-anchor="middle" fill="currentColor" opacity="0.3">No Results</text>
+</svg>

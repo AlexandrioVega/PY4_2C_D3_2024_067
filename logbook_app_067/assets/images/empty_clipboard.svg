@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <!-- Clipboard body -->
+  <rect x="40" y="30" width="120" height="150" rx="8" fill="currentColor" opacity="0.2" stroke="currentColor" stroke-width="2"/>
+  
+  <!-- Clipboard clip -->
+  <rect x="85" y="10" width="30" height="25" rx="3" fill="currentColor" opacity="0.3" stroke="currentColor" stroke-width="2"/>
+  
+  <!-- Empty lines (to represent empty state) -->
+  <line x1="60" y1="60" x2="140" y2="60" stroke="currentColor" stroke-width="2" opacity="0.3"/>
+  <line x1="60" y1="80" x2="140" y2="80" stroke="currentColor" stroke-width="2" opacity="0.2"/>
+  <line x1="60" y1="100" x2="140" y2="100" stroke="currentColor" stroke-width="2" opacity="0.2"/>
+  <line x1="60" y1="120" x2="100" y2="120" stroke="currentColor" stroke-width="2" opacity="0.2"/>
+  
+  <!-- Question mark in center -->
+  <text x="100" y="155" font-size="40" font-weight="bold" text-anchor="middle" fill="currentColor" opacity="0.3">?</text>
+</svg>

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hive/hive.dart';
 import 'package:mongo_dart/mongo_dart.dart' show ObjectId;
+import 'dart:async';
 import 'package:logbook_app_067/features/logbook/models/log_model.dart';
 import 'package:logbook_app_067/helpers/log_helper.dart';
 import 'package:logbook_app_067/services/access_control_service.dart';
@@ -17,6 +18,7 @@ class LogController {
       ValueNotifier<List<LogModel>>([]);
 
   late final Box<LogModel> _myBox;
+  Timer? _debounceTimer;
 
   final String userRole;
   final String userId;
@@ -331,8 +333,11 @@ class LogController {
   }
 
   void updateSearchQuery(String query) {
-    searchQueryNotifier.value = query;
-    performSearch();
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(Duration(milliseconds: 300), () {
+      searchQueryNotifier.value = query;
+      performSearch();
+    });
   }
 
   void clearSearch() {
@@ -355,6 +360,7 @@ class LogController {
   }
 
   void dispose() {
+    _debounceTimer?.cancel();
     logsNotifier.dispose();
     searchQueryNotifier.dispose();
     filteredLogsNotifier.dispose();

@@ -132,7 +132,6 @@ class MongoService {
         level: 3,
       );
 
-      // Filter berdasarkan teamId — isolasi data antar kelompok
       final List<Map<String, dynamic>> data = await collection
           .find(where.eq('teamId', teamId))
           .toList();
@@ -163,7 +162,6 @@ class MongoService {
     }
   }
 
-  /// CREATE: Menambahkan data baru
   Future<void> insertLog(LogModel log) async {
     try {
       final collection = await _getSafeCollection();
@@ -184,7 +182,6 @@ class MongoService {
     }
   }
 
-  /// UPSERT: Insert jika baru, Update jika sudah ada (Safer untuk offline-first)
   Future<void> upsertLog(LogModel log) async {
     try {
       final collection = await _getSafeCollection();
@@ -243,7 +240,6 @@ class MongoService {
     }
   }
 
-  /// DELETE: Menghapus dokumen berdasarkan ObjectId
   Future<void> deleteLog(ObjectId id) async {
     try {
       final collection = await _getSafeCollection();

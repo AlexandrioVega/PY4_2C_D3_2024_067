@@ -133,19 +133,13 @@ Buka `.env` dengan text editor dan tambahkan:
 ```env
 # MongoDB Configuration
 MONGO_URI=mongodb+srv://<username>:<password>@cluster.mongodb.net/logbook_db?retryWrites=true&w=majority
-MONGO_DB_NAME=logbook_db
 
-# API Configuration (jika ada backend)
-API_BASE_URL=https://api.example.com
-API_TIMEOUT=30
+# 1: Error, 2: Info (Connect/Success), 3: Verbose (All Activities)
+LOG_LEVEL=1
 
-# Firebase Configuration (optional)
-FIREBASE_API_KEY=your_firebase_key
-FIREBASE_PROJECT_ID=your_project_id
+# Tambahkan nama file di sini jika ingin mematikan log dari MongoService
+LOG_MUTE=
 
-# App Configuration
-APP_ENV=production
-DEBUG_MODE=false
 ```
 
 ### 3. Setup pubspec.yaml Dependencies

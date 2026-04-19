@@ -6,7 +6,6 @@ import 'package:provider/provider.dart';
 import 'vision_controller.dart';
 import 'damage_painter.dart';
 
-// 🔥 IMPORT PROCESSING
 import '../image_processing/presentation/processing_view.dart';
 import '../image_processing/presentation/processing_controller.dart';
 
@@ -44,7 +43,6 @@ class _VisionViewState extends State<VisionView> {
         listenable: _visionController,
         builder: (context, child) {
 
-          // ❌ ERROR (NO CAMERA ACCESS)
           if (_visionController.errorMessage != null) {
             return Center(
               child: Column(
@@ -66,7 +64,6 @@ class _VisionViewState extends State<VisionView> {
             );
           }
 
-          // ⏳ LOADING
           if (!_visionController.isInitialized) {
             return const Center(
               child: Column(
@@ -89,9 +86,6 @@ class _VisionViewState extends State<VisionView> {
     );
   }
 
-  // =========================
-  // CONTROL PANEL
-  // =========================
   Widget _buildControlPanel() {
     return ListenableBuilder(
       listenable: _visionController,
@@ -114,7 +108,6 @@ class _VisionViewState extends State<VisionView> {
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
 
-              // 🔦 FLASH
               Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -138,7 +131,6 @@ class _VisionViewState extends State<VisionView> {
                 ],
               ),
 
-              // 🎯 OVERLAY
               Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -162,15 +154,11 @@ class _VisionViewState extends State<VisionView> {
     );
   }
 
-  // =========================
-  // MAIN STACK
-  // =========================
   Widget _buildVisionStack() {
     return Stack(
       fit: StackFit.expand,
       children: [
 
-        // 📷 CAMERA LAYER
         Center(
           child: AspectRatio(
             aspectRatio:
@@ -179,7 +167,6 @@ class _VisionViewState extends State<VisionView> {
           ),
         ),
 
-        // 🎯 OVERLAY (TIDAK BLOCK CLICK)
         Positioned.fill(
           child: IgnorePointer(
             child: _visionController.isOverlayEnabled
@@ -190,7 +177,6 @@ class _VisionViewState extends State<VisionView> {
           ),
         ),
 
-        // 📸 CAPTURE BUTTON
         Positioned(
           bottom: 120,
           left: 0,
@@ -218,7 +204,6 @@ class _VisionViewState extends State<VisionView> {
           ),
         ),
 
-        // 🧠 HUD STATUS
         Positioned(
           top: 40,
           left: 20,
@@ -241,7 +226,6 @@ class _VisionViewState extends State<VisionView> {
           ),
         ),
 
-        // 🎛 CONTROL PANEL
         Positioned(
           bottom: 30,
           left: 20,

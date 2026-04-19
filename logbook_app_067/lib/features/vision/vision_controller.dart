@@ -10,13 +10,11 @@ class VisionController extends ChangeNotifier with WidgetsBindingObserver {
   bool isInitialized = false;
   String? errorMessage;
 
-  // Fitur tambahan untuk kontrol kamera (misal: flash, overlay)
   bool isFlashOn = false;
   bool isOverlayEnabled = true;
 
 
   VisionController() {
-    // Mendaftarkan observer agar bisa memantau status aplikasi (Lifecycle)
     WidgetsBinding.instance.addObserver(this);
     initCamera();
   }
@@ -30,11 +28,10 @@ class VisionController extends ChangeNotifier with WidgetsBindingObserver {
         return;
       }
 
-      // Memilih Kamera Belakang (Index 0)
       controller = CameraController(
         cameras[0],
-        ResolutionPreset.medium, // Keseimbangan antara akurasi AI & performa
-        enableAudio: false,      // Kita hanya butuh visual untuk deteksi jalan
+        ResolutionPreset.medium, 
+        enableAudio: false,      
       );
 
       await controller!.initialize();
@@ -100,18 +97,18 @@ class VisionController extends ChangeNotifier with WidgetsBindingObserver {
 
     results = [
       DetectionResult(
-        box: Rect.fromLTWH(x, y, w, h), // 🔥 NORMALIZED (0–1)
+        box: Rect.fromLTWH(x, y, w, h), 
         label: "D40",
         score: 0.9,
       ),
       DetectionResult(
-        box: Rect.fromLTWH(x, y, w, h), // 🔥 NORMALIZED (0–1)
+        box: Rect.fromLTWH(x, y, w, h), 
         label: "D00",
         score: 0.9,
       ),
     ];
 
-    print("Mock Box -> x:$x y:$y w:$w h:$h"); // 🔥 bukti log
+    print("Mock Box -> x:$x y:$y w:$w h:$h");
 
     notifyListeners();
   }
@@ -133,19 +130,16 @@ class VisionController extends ChangeNotifier with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     final CameraController? cameraController = controller;
 
-    // Jika controller belum ada atau belum siap, abaikan
     if (cameraController == null || !cameraController.value.isInitialized) {
       return;
     }
 
     if (state == AppLifecycleState.inactive) {
       stopMockDetection();
-      // Melepaskan resource kamera saat aplikasi tidak terlihat
       cameraController.dispose();
       isInitialized = false;
       notifyListeners();
     } else if (state == AppLifecycleState.resumed) {
-      // Menginisialisasi ulang saat pengguna kembali ke aplikasi
       initCamera();
     }
   }

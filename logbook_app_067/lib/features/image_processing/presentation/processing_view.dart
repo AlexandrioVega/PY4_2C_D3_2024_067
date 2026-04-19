@@ -37,10 +37,10 @@ class _ProcessingViewState extends State<ProcessingView> {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      backgroundColor: isDarkMode ? Colors.grey[900] : Colors.grey[50],
+      backgroundColor: Colors.grey[900],
       appBar: AppBar(
         elevation: 0,
-        backgroundColor: isDarkMode ? Colors.black : Colors.white,
+        backgroundColor: Colors.black,
         title: const Text(
           "Image Processing",
           style: TextStyle(
@@ -53,7 +53,6 @@ class _ProcessingViewState extends State<ProcessingView> {
       ),
       body: Column(
         children: [
-          // 🖼 IMAGE PREVIEW - Premium Design
           Expanded(
             flex: 3,
             child: Container(
@@ -62,8 +61,8 @@ class _ProcessingViewState extends State<ProcessingView> {
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
                   colors: [
-                    isDarkMode ? Colors.black : Colors.white,
-                    isDarkMode ? Colors.grey[800]! : Colors.grey[100]!,
+                    Colors.black,
+                    Colors.grey[900]!,
                   ],
                 ),
               ),
@@ -115,12 +114,11 @@ class _ProcessingViewState extends State<ProcessingView> {
             ),
           ),
 
-          // 🎛 CONTROLS PANEL
           Expanded(
             flex: 2,
             child: Container(
               decoration: BoxDecoration(
-                color: isDarkMode ? Colors.grey[850] : Colors.white,
+                color: Colors.grey[850],
                 borderRadius: const BorderRadius.vertical(
                   top: Radius.circular(24),
                 ),
@@ -134,65 +132,171 @@ class _ProcessingViewState extends State<ProcessingView> {
               ),
               child: SingleChildScrollView(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 20, 20, 30),
+                  padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // 📌 Section Title
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Colors.blue.shade400.withOpacity(0.1),
+                              Colors.blue.shade600.withOpacity(0.05),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: Colors.blue.shade200.withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Icon(
+                                  _getFilterIcon(controller.currentType),
+                                  size: 16,
+                                  color: Colors.blue.shade300,
+                                ),
+                                const SizedBox(width: 10),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        controller.currentType.displayName,
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w700,
+                                          color: Colors.blue.shade300,
+                                          letterSpacing: 0.2,
+                                        ),
+                                      ),
+                                      Text(
+                                        controller.currentType.description,
+                                        style: TextStyle(
+                                          fontSize: 9,
+                                          color: Colors.grey[500],
+                                          fontStyle: FontStyle.italic,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+
                       Text(
-                        "Filter",
+                        "FILTER",
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: 10,
                           fontWeight: FontWeight.w600,
-                          color: Colors.grey[600],
+                          color: Colors.grey[400],
                           letterSpacing: 1,
                         ),
                       ),
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 6),
 
-                      // 🎛 Filter Dropdown
-                      Container(
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: Colors.grey[300]!,
-                            width: 1.5,
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                          color: isDarkMode ? Colors.grey[800] : Colors.grey[50],
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 12),
-                          child: DropdownButton<ProcessingType>(
-                            value: controller.currentType,
-                            onChanged: (value) {
-                              if (value != null) {
-                                controller.setProcessing(value);
-                              }
-                            },
-                            isExpanded: true,
-                            underline: const SizedBox(),
-                            items: ProcessingType.values.map((type) {
-                              return DropdownMenuItem(
-                                value: type,
-                                child: Text(
-                                  type.displayName,
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
-                                    color: isDarkMode
-                                        ? Colors.white
-                                        : Colors.grey[800],
-                                  ),
+                      SizedBox(
+                        height: 78,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          padding: const EdgeInsets.symmetric(vertical: 2),
+                          itemCount: ProcessingType.values.length,
+                          itemBuilder: (context, index) {
+                            final type = ProcessingType.values[index];
+                            final isSelected = controller.currentType == type;
+                            
+                            return Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 4),
+                              child: GestureDetector(
+                                onTap: () {
+                                  controller.setProcessing(type);
+                                },
+                                child: Column(
+                                  children: [
+                                    // Filter Icon/Badge
+                                    AnimatedContainer(
+                                      duration: const Duration(milliseconds: 200),
+                                      width: 54,
+                                      height: 54,
+                                      decoration: BoxDecoration(
+                                        gradient: isSelected
+                                            ? LinearGradient(
+                                                colors: [
+                                                  Colors.blue.shade400,
+                                                  Colors.blue.shade600,
+                                                ],
+                                              )
+                                            : LinearGradient(
+                                                colors: [
+                                                  Colors.grey[700]!,
+                                                  Colors.grey[800]!,
+                                                ],
+                                              ),
+                                        borderRadius: BorderRadius.circular(10),
+                                        boxShadow: isSelected
+                                            ? [
+                                                BoxShadow(
+                                                  color: Colors.blue.shade300
+                                                      .withOpacity(0.3),
+                                                  blurRadius: 6,
+                                                  offset: const Offset(0, 2),
+                                                ),
+                                              ]
+                                            : [],
+                                      ),
+                                      child: Center(
+                                        child: Icon(
+                                          _getFilterIcon(type),
+                                          color: isSelected
+                                              ? Colors.white
+                                              : Colors.grey[400],
+                                          size: 22,
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    // Filter Name
+                                    SizedBox(
+                                      width: 54,
+                                      child: Text(
+                                        type.displayName,
+                                        textAlign: TextAlign.center,
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                        style: TextStyle(
+                                          fontSize: 8,
+                                          fontWeight: isSelected
+                                              ? FontWeight.w600
+                                              : FontWeight.w500,
+                                          color: isSelected
+                                              ? Colors.blue.shade300
+                                              : Colors.grey[400],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              );
-                            }).toList(),
-                          ),
+                              ),
+                            );
+                          },
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 8),
 
-                      // 🎚 BRIGHTNESS SLIDER
                       if (controller.currentType == ProcessingType.brightness)
                         _buildParameterSlider(
                           context,
@@ -206,7 +310,6 @@ class _ProcessingViewState extends State<ProcessingView> {
                           displayValue: controller.brightness.toStringAsFixed(0),
                         ),
 
-                      // 🎚 GAMMA SLIDER
                       if (controller.currentType == ProcessingType.gamma)
                         _buildParameterSlider(
                           context,
@@ -220,9 +323,63 @@ class _ProcessingViewState extends State<ProcessingView> {
                           displayValue: controller.gammaValue.toStringAsFixed(2),
                         ),
 
+                      if (controller.currentType == ProcessingType.mean)
+                        _buildKernelSizeButtons(
+                          context,
+                          label: "Kernel Size",
+                          sizes: [3, 5, 7, 9],
+                          currentSize: controller.kernelSize,
+                          onSelect: (size) {
+                            controller.setKernelSize(size.toDouble());
+                          },
+                        ),
+
+                      if (controller.currentType == ProcessingType.gaussian)
+                        _buildKernelSizeButtons(
+                          context,
+                          label: "Blur Radius",
+                          sizes: [1, 2, 3, 4, 5],
+                          currentSize: controller.kernelSize,
+                          onSelect: (size) {
+                            controller.setKernelSize(size.toDouble());
+                          },
+                        ),
+
+                      if (controller.currentType == ProcessingType.median)
+                        _buildKernelSizeButtons(
+                          context,
+                          label: "Filter Radius",
+                          sizes: [1, 2, 3],
+                          currentSize: controller.medianRadius,
+                          onSelect: (size) {
+                            controller.setMedianRadius(size.toDouble());
+                          },
+                        ),
+
+                      if (controller.currentType == ProcessingType.highPass)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
+                          child: Text(
+                            "Edge Detection: Laplacian Kernel Applied",
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey[600],
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ),
+
+                      if (controller.currentType == ProcessingType.bandPass)
+                        _buildSharpenButtons(
+                          context,
+                          currentIntensity: controller.sharpenAmount,
+                          onSelect: (intensity) {
+                            controller.setSharpenAmount(intensity);
+                          },
+                        ),
+
                       const SizedBox(height: 24),
 
-                      // 🔄 ACTION BUTTONS
                       Row(
                         children: [
                           // Reset Button
@@ -283,15 +440,7 @@ class _ProcessingViewState extends State<ProcessingView> {
                             child: Material(
                               color: Colors.transparent,
                               child: InkWell(
-                                onTap: () {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: const Text("Save feature coming soon!"),
-                                      backgroundColor: Colors.blue.shade600,
-                                      duration: const Duration(seconds: 2),
-                                    ),
-                                  );
-                                },
+                                onTap: () => _saveImage(context, controller),
                                 borderRadius: BorderRadius.circular(12),
                                 child: Container(
                                   padding: const EdgeInsets.symmetric(
@@ -352,7 +501,6 @@ class _ProcessingViewState extends State<ProcessingView> {
     );
   }
 
-  /// 🎚 Build slider dengan styling elegan
   Widget _buildParameterSlider(
     BuildContext context, {
     required String label,
@@ -361,6 +509,7 @@ class _ProcessingViewState extends State<ProcessingView> {
     required double max,
     required Function(double) onChanged,
     required String displayValue,
+    int? divisions,
   }) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
@@ -425,7 +574,7 @@ class _ProcessingViewState extends State<ProcessingView> {
             min: min,
             max: max,
             onChanged: onChanged,
-            divisions: ((max - min) * 2).toInt(),
+            divisions: divisions ?? ((max - min) * 2).toInt(),
           ),
         ),
         const SizedBox(height: 8),
@@ -449,6 +598,256 @@ class _ProcessingViewState extends State<ProcessingView> {
           ],
         ),
       ],
+    );
+  }
+
+  Widget _buildKernelSizeButtons(
+    BuildContext context, {
+    required String label,
+    required List<int> sizes,
+    required int currentSize,
+    required Function(int) onSelect,
+  }) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey[600],
+            letterSpacing: 0.5,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: sizes.map((size) {
+            final isSelected = size == currentSize;
+            return Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => onSelect(size),
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: isSelected
+                          ? Colors.blue.shade400
+                          : Colors.grey[300]!,
+                      width: isSelected ? 2 : 1.5,
+                    ),
+                    color: isSelected
+                        ? Colors.blue.shade50
+                        : (isDarkMode ? Colors.grey[800] : Colors.grey[50]),
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: Colors.blue.shade200.withOpacity(0.4),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Text(
+                    "${size}×${size}",
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                      color: isSelected
+                          ? Colors.blue.shade600
+                          : (isDarkMode ? Colors.white : Colors.grey[700]),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 12),
+      ],
+    );
+  }
+
+  Widget _buildSharpenButtons(
+    BuildContext context, {
+    required double currentIntensity,
+    required Function(double) onSelect,
+  }) {
+    final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    final intensities = [0.5, 1.0, 1.5, 2.0];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          "Sharpen Intensity",
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey[600],
+            letterSpacing: 0.5,
+          ),
+        ),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: intensities.map((intensity) {
+            final isSelected = (intensity - currentIntensity).abs() < 0.01;
+            return Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => onSelect(intensity),
+                borderRadius: BorderRadius.circular(10),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(10),
+                    border: Border.all(
+                      color: isSelected
+                          ? Colors.blue.shade400
+                          : Colors.grey[300]!,
+                      width: isSelected ? 2 : 1.5,
+                    ),
+                    color: isSelected
+                        ? Colors.blue.shade50
+                        : (isDarkMode ? Colors.grey[800] : Colors.grey[50]),
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: Colors.blue.shade200.withOpacity(0.4),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ]
+                        : null,
+                  ),
+                  child: Text(
+                    intensity.toStringAsFixed(1),
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                      color: isSelected
+                          ? Colors.blue.shade600
+                          : (isDarkMode ? Colors.white : Colors.grey[700]),
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 12),
+      ],
+    );
+  }
+
+  /// Get icon untuk setiap filter type
+  IconData _getFilterIcon(ProcessingType type) {
+    switch (type) {
+      case ProcessingType.none:
+        return Icons.image;
+      case ProcessingType.brightness:
+        return Icons.brightness_6;
+      case ProcessingType.invert:
+        return Icons.invert_colors;
+      case ProcessingType.grayscale:
+        return Icons.monochrome_photos;
+      case ProcessingType.gamma:
+        return Icons.lightbulb;
+      case ProcessingType.mean:
+        return Icons.blur_on;
+      case ProcessingType.gaussian:
+        return Icons.blur_on;
+      case ProcessingType.median:
+        return Icons.blur_on;
+      case ProcessingType.highPass:
+        return Icons.auto_fix_high;
+      case ProcessingType.bandPass:
+        return Icons.auto_fix_high;
+      case ProcessingType.histogramEqualization:
+        return Icons.equalizer;
+    }
+  }
+
+  Future<void> _saveImage(
+    BuildContext context,
+    ProcessingController controller,
+  ) async {
+    try {
+      final imageBytes = controller.getImageBytes();
+      if (imageBytes == null) {
+        _showErrorSnackbar(context, "Image not ready yet");
+        return;
+      }
+      final timestamp = DateTime.now().millisecondsSinceEpoch;
+      final filterName = controller.currentType.displayName.replaceAll(' ', '_');
+      final filename = 'Smart-Patrol_${filterName}_$timestamp.jpg';
+
+      final directory = Directory('/storage/emulated/0/DCIM/Camera');
+      
+      if (!await directory.exists()) {
+        final tempDir = Directory('/data/data');
+        final savedFile = File('${tempDir.path}/$filename');
+        await savedFile.writeAsBytes(imageBytes);
+        _showSuccessSnackbar(
+          context,
+          "Gambar disimpan ke:\n${savedFile.path}",
+        );
+      } else {
+        final savedFile = File('${directory.path}/$filename');
+        await savedFile.writeAsBytes(imageBytes);
+        _showSuccessSnackbar(
+          context,
+          "Gambar disimpan ke:\nDCIM/Camera/$filename",
+        );
+      }
+    } catch (e) {
+      _showErrorSnackbar(context, "Gagal menyimpan: $e");
+    }
+  }
+
+  void _showSuccessSnackbar(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green.shade600,
+        duration: const Duration(seconds: 3),
+        action: SnackBarAction(
+          label: "OK",
+          textColor: Colors.white,
+          onPressed: () {},
+        ),
+      ),
+    );
+  }
+
+  void _showErrorSnackbar(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red.shade600,
+        duration: const Duration(seconds: 3),
+        action: SnackBarAction(
+          label: "OK",
+          textColor: Colors.white,
+          onPressed: () {},
+        ),
+      ),
     );
   }
 }

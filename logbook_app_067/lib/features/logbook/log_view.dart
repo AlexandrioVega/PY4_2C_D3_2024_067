@@ -7,6 +7,7 @@ import 'package:logbook_app_067/features/logbook/widgets/log_item_widget.dart';
 import 'package:logbook_app_067/features/onboarding/onboarding_view.dart';
 import 'package:logbook_app_067/helpers/log_helper.dart';
 import 'package:logbook_app_067/services/access_control_service.dart';
+import 'package:logbook_app_067/features/vision/vision_view.dart';
 
 class LogView extends StatefulWidget {
   final Map<String, String> currentUser; 
@@ -310,10 +311,31 @@ class _LogViewState extends State<LogView> {
         ],
       ),
 
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _goToEditor(),
-        icon: const Icon(Icons.add),
-        label: const Text("Tambah Catatan"),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // 🔵 Tombol Kamera
+          FloatingActionButton(
+            heroTag: "camera",
+            onPressed: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => VisionView(),
+              ),
+            ),
+            child: const Icon(Icons.camera_alt),
+          ),
+
+          const SizedBox(height: 12),
+
+          // 🟢 Tombol Tambah Catatan (yang lama)
+          FloatingActionButton.extended(
+            heroTag: "add",
+            onPressed: () => _goToEditor(),
+            icon: const Icon(Icons.add),
+            label: const Text("Tambah Catatan"),
+          ),
+        ],
       ),
     );
   }
